@@ -1,24 +1,33 @@
-interface CustomEventHandler {
+interface CustomEventListener {
     node: Element;
     event: string;
     callback: (e: Event) => void;
 }
 
 export class Mini {
-    private eventHandlers: CustomEventHandler[] = [];
-    private collection: NodeListOf<Element>;
+    private eventListeners: CustomEventListener[] = [];
+    private collection: HTMLElement[] = [];
 
     constructor(selector: string) {
-        this.collection = document.querySelectorAll(selector);
+        if (selector.indexOf(",") < 0 && selector[0] === "#") {
+            this.collection.push(document.getElementById(selector));
+        }
+        else {
+            document
+                .querySelectorAll(selector)
+                .forEach(element => this.collection.push(element as HTMLElement));
+        }
     }
 
     public get length() {
         return this.collection.length;
     }
 
+    // EventListeners
+
     public on(event: string, callback: (e: Event) => void) {
         this.collection.forEach(node => {
-            this.eventHandlers.push({
+            this.eventListeners.push({
                 node,
                 event,
                 callback
@@ -28,17 +37,22 @@ export class Mini {
     }
 
     public off(event: string, callback?: (e: Event) => void) {
-        this.eventHandlers
-            .filter(e => {
-                if(callback) {
-                    return e.event === event && callback === e.callback;
+        const listenersToRemove = [];
+
+        this.eventListeners = this.eventListeners
+            .filter(listener => {
+                let shouldBeRemoved = listener.event === event;
+                if (callback && shouldBeRemoved) {
+                    shouldBeRemoved = callback === listener.callback;
                 }
-                else {
-                    return e.event === event;
+                if(shouldBeRemoved) {
+                    listenersToRemove.push(listener);
                 }
-            })
-            .forEach(e => {
-                e.node.removeEventListener(e.event, e.callback);
-            })
+                return !shouldBeRemoved;
+            });
+
+        listenersToRemove.forEach(e => {
+            e.node.removeEventListener(e.event, e.callback);
+        })
     }
 }
