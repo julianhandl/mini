@@ -36,15 +36,23 @@ export class Mini {
         })
     }
 
-    public off(event: string, callback?: (e: Event) => void) {
+    public off(eventOrFunction: string | ((e: Event) => void), callback?: (e: Event) => void) {
         const listenersToRemove = [];
 
         this.eventListeners = this.eventListeners
             .filter(listener => {
-                let shouldBeRemoved = listener.event === event;
+                let shouldBeRemoved = false;
+                if(typeof eventOrFunction === "object") {
+                    shouldBeRemoved = listener.callback === eventOrFunction;
+                }
+                else {
+                    shouldBeRemoved = listener.event === eventOrFunction;
+                }
+
                 if (callback && shouldBeRemoved) {
                     shouldBeRemoved = callback === listener.callback;
                 }
+
                 if(shouldBeRemoved) {
                     listenersToRemove.push(listener);
                 }
